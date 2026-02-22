@@ -27,21 +27,25 @@ struct KeyboardView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            if !isEmojiMode {
-                quickLanguageStrip
-                    .padding(.horizontal, 4)
-                    .padding(.top, 4)
+            quickLanguageStrip
+                .padding(.horizontal, 4)
+                .padding(.top, 4)
+                .opacity(isEmojiMode ? 0 : 1)
+                .frame(height: isEmojiMode ? 0 : nil)
+                .clipped()
 
-                translationBar
-                    .padding(.horizontal, 4)
-                    .padding(.vertical, 4)
+            translationBar
+                .padding(.horizontal, 4)
+                .padding(.vertical, isEmojiMode ? 0 : 4)
+                .opacity(isEmojiMode ? 0 : 1)
+                .frame(height: isEmojiMode ? 0 : nil)
+                .clipped()
 
-                if (!context.predictions.isEmpty || context.undoCorrection != nil)
-                    && !context.isNumberMode {
-                    predictionBar
-                        .padding(.horizontal, 4)
-                        .padding(.bottom, 2)
-                }
+            if (!context.predictions.isEmpty || context.undoCorrection != nil)
+                && !isEmojiMode && !context.isNumberMode {
+                predictionBar
+                    .padding(.horizontal, 4)
+                    .padding(.bottom, 2)
             }
 
             keyRows
@@ -441,10 +445,11 @@ struct KeyboardView: View {
                         .foregroundStyle(.secondary)
                     Spacer()
                 }
-                .padding(.horizontal, 10)
-                .frame(height: 32)
-                .modifier(GlassBarBackground())
+                .padding(.horizontal, 12)
+                .frame(height: 38)
+                .modifier(SearchBarBackground())
             }
+            .buttonStyle(.plain)
             .padding(.horizontal, 2)
 
             // Scrollable emoji grid
@@ -456,7 +461,7 @@ struct KeyboardView: View {
                             emojiHistory.recordUsage(emoji)
                         } label: {
                             Text(emoji)
-                                .font(.system(size: 28))
+                                .font(.system(size: 33))
                                 .frame(maxWidth: .infinity)
                                 .frame(height: 41)
                         }
@@ -486,10 +491,11 @@ struct KeyboardView: View {
                             selectedCategory = cat
                         } label: {
                             Image(systemName: cat.icon)
-                                .font(.system(size: 14))
+                                .font(.system(size: 15))
                                 .frame(width: 30, height: 41)
-                                .foregroundStyle(selectedCategory == cat ? .blue : .primary)
+                                .foregroundStyle(selectedCategory == cat ? .primary : .secondary)
                         }
+                        .buttonStyle(.plain)
                     }
                 }
             }
@@ -530,20 +536,18 @@ struct KeyboardView: View {
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
                         }
+                        .buttonStyle(.plain)
                     }
                 }
-                .padding(.horizontal, 10)
-                .frame(height: 32)
-                .modifier(GlassBarBackground())
+                .padding(.horizontal, 12)
+                .frame(height: 38)
+                .modifier(SearchBarBackground())
                 .padding(.horizontal, 2)
 
                 // Frequently used row
                 if !emojiHistory.frequentEmojis.isEmpty {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 4) {
-                            Text("FQ:")
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
                             ForEach(emojiHistory.frequentEmojis, id: \.self) { emoji in
                                 Button {
                                     context.insertText(emoji)
@@ -552,6 +556,7 @@ struct KeyboardView: View {
                                     Text(emoji)
                                         .font(.system(size: 22))
                                 }
+                                .buttonStyle(.plain)
                             }
                         }
                         .padding(.horizontal, 6)
@@ -568,9 +573,9 @@ struct KeyboardView: View {
                                 emojiHistory.recordUsage(emoji)
                             } label: {
                                 Text(emoji)
-                                    .font(.system(size: 28))
+                                    .font(.system(size: 33))
                                     .frame(maxWidth: .infinity)
-                                    .frame(height: 38)
+                                    .frame(height: keyHeight)
                             }
                             .buttonStyle(KeyButtonStyle())
                         }
@@ -579,7 +584,7 @@ struct KeyboardView: View {
                 }
 
                 // Letter keyboard for typing search query
-                VStack(spacing: 6) {
+                VStack(spacing: rowSpacing) {
                     HStack(spacing: keySpacing) {
                         ForEach(rows[0], id: \.self) { key in
                             searchLetterKey(key)
@@ -603,15 +608,34 @@ struct KeyboardView: View {
                         } label: {
                             Image(systemName: "delete.left")
                                 .font(.subheadline)
-                                .frame(width: 44, height: 36)
+                                .frame(width: 44, height: keyHeight)
                                 .modifier(ActionKeyBackgroundModifier(tint: nil))
                                 .foregroundStyle(.primary)
                         }
+                        .buttonStyle(.plain)
                     }
                 }
 
-                // Bottom row: space + Done
+                // Bottom row: ABC + emoji + space + Done
                 HStack(spacing: keySpacing) {
+                    // ABC — back to letter keyboard
+                    ActionKey(label: "ABC", systemImage: nil, width: 45) {
+                        isEmojiSearching = false
+                        emojiSearchText = ""
+                        isEmojiMode = false
+                    }
+
+                    // Emoji — back to emoji browse
+                    Image(systemName: "face.smiling")
+                        .font(.subheadline)
+                        .frame(width: 36, height: keyHeight)
+                        .modifier(ActionKeyBackgroundModifier(tint: nil))
+                        .foregroundStyle(.primary)
+                        .onTapGesture {
+                            isEmojiSearching = false
+                            emojiSearchText = ""
+                        }
+
                     // Space (appends to search text)
                     Button {
                         emojiSearchText.append(" ")
@@ -619,15 +643,17 @@ struct KeyboardView: View {
                         Text("space")
                             .font(.subheadline)
                             .frame(maxWidth: .infinity)
-                            .frame(height: 36)
+                            .frame(height: keyHeight)
                             .modifier(KeyBackgroundModifier())
                             .foregroundStyle(.primary)
                     }
+                    .buttonStyle(.plain)
 
-                    // Done button
-                    ActionKey(label: "Done", systemImage: nil, width: 72, tint: .blue) {
+                    // Done — back to main keyboard
+                    ActionKey(label: "Done", systemImage: nil, width: 72) {
                         isEmojiSearching = false
                         emojiSearchText = ""
+                        isEmojiMode = false
                     }
                 }
             }
@@ -640,12 +666,13 @@ struct KeyboardView: View {
             emojiSearchText.append(key)
         } label: {
             Text(key)
-                .font(.system(size: 18, weight: .light))
+                .font(.system(size: 22, weight: .light))
                 .frame(maxWidth: .infinity)
-                .frame(height: 36)
+                .frame(height: keyHeight)
                 .modifier(KeyBackgroundModifier())
                 .foregroundStyle(.primary)
         }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Helpers
@@ -874,6 +901,21 @@ private struct ActionKeyBackgroundModifier: ViewModifier {
                 in: .rect(cornerRadius: 8)
             )
             .shadow(color: .black.opacity(0.15), radius: 0, x: 0, y: 1)
+    }
+}
+
+/// Rounded search bar background (capsule shape).
+private struct SearchBarBackground: ViewModifier {
+    @Environment(\.colorScheme) private var colorScheme
+
+    func body(content: Content) -> some View {
+        content
+            .background(
+                colorScheme == .dark
+                    ? Color.white.opacity(0.12)
+                    : Color(.systemGray4).opacity(0.5),
+                in: Capsule()
+            )
     }
 }
 
