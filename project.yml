@@ -1,0 +1,40 @@
+name: TranslateKey
+
+options:
+  bundleIdPrefix: com.translatekey
+  deploymentTarget:
+    iOS: "18.0"
+  xcodeVersion: "16.0"
+
+settings:
+  base:
+    SWIFT_VERSION: "5.9"
+    TARGETED_DEVICE_FAMILY: 1
+
+targets:
+  TranslateKey:
+    type: application
+    platform: iOS
+    sources:
+      - path: App
+      - path: Shared
+    settings:
+      base:
+        INFOPLIST_FILE: App/Info.plist
+        CODE_SIGN_ENTITLEMENTS: App/TranslateKey.entitlements
+        PRODUCT_BUNDLE_IDENTIFIER: com.translatekey.app
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    dependencies:
+      - target: TranslateKeyboard
+
+  TranslateKeyboard:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: Keyboard
+      - path: Shared
+    settings:
+      base:
+        INFOPLIST_FILE: Keyboard/Info.plist
+        CODE_SIGN_ENTITLEMENTS: Keyboard/TranslateKeyboard.entitlements
+        PRODUCT_BUNDLE_IDENTIFIER: com.translatekey.app.keyboard

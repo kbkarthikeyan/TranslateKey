@@ -1,0 +1,493 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 63;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		02DCAF900ED62F1C427DBC1C /* LanguageManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F4C5F65CFC8C3BE14C5F9DD /* LanguageManager.swift */; };
+		06767375CB5D4427390C6E0C /* TranslationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 583894633504E236A865057C /* TranslationService.swift */; };
+		0DD19EF77F0FACF98FC69C96 /* KeyboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91E1CADA8CA08D9F2D23CE59 /* KeyboardView.swift */; };
+		1A5BA574434935232588A834 /* KeyboardViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E00A03746403A288E4E4BA9 /* KeyboardViewController.swift */; };
+		3025ABE1B651ACB33D14C2F1 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 174C85225A3A8D6DAC70DFC5 /* Constants.swift */; };
+		46236A3A551930719EAD72D4 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DD12920EDBC9DDFD48978EF /* ContentView.swift */; };
+		61C8A3FD912E12D5E246C156 /* TranslationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 583894633504E236A865057C /* TranslationService.swift */; };
+		62124C613D98BCCBA13BF682 /* TranslateKeyboard.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = F568CF3C553AC06723103677 /* TranslateKeyboard.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		87D7582BDDEF3DB7E4763107 /* TranslateKeyApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 891A077653492C97216ADAC8 /* TranslateKeyApp.swift */; };
+		95E617C7AE7D9D43BEA8E07D /* SwipeEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFAE4F6F91A42C4AE845CFA /* SwipeEngine.swift */; };
+		D8F4A2E1C3B7850924EB6C3F /* EmojiStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E3F1D2B4C8965013FA7B2E /* EmojiStore.swift */; };
+		B45A306C4986CDB6CD47AB3F /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 174C85225A3A8D6DAC70DFC5 /* Constants.swift */; };
+		C7090D97885EF5FFC8DA2580 /* LanguageManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F4C5F65CFC8C3BE14C5F9DD /* LanguageManager.swift */; };
+		D39B8ED905E270A6931D6C13 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 52859EF9A28B17E172CF5D3B /* Assets.xcassets */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		CA0E609BA3F363CD9033C384 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 1524C205270FDC2B9F3B9AEA /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 1CD1E24CF16253A67C66BA5F;
+			remoteInfo = TranslateKeyboard;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		C79D0BEF49A20AAC64D93F96 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				62124C613D98BCCBA13BF682 /* TranslateKeyboard.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		174C85225A3A8D6DAC70DFC5 /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
+		1F4C5F65CFC8C3BE14C5F9DD /* LanguageManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LanguageManager.swift; sourceTree = "<group>"; };
+		200156579D88EF0FAEF505DB /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		52859EF9A28B17E172CF5D3B /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A7E3F1D2B4C8965013FA7B2E /* EmojiStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmojiStore.swift; sourceTree = "<group>"; };
+		57BFD4E0EBF55416A3AE5C43 /* TranslateKey.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TranslateKey.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		583894633504E236A865057C /* TranslationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslationService.swift; sourceTree = "<group>"; };
+		64D553C1A6C288F442CDA69F /* TranslateKeyboard.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TranslateKeyboard.entitlements; sourceTree = "<group>"; };
+		64E91ED9B9956C89AFA76120 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		6E00A03746403A288E4E4BA9 /* KeyboardViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardViewController.swift; sourceTree = "<group>"; };
+		7DD12920EDBC9DDFD48978EF /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		891A077653492C97216ADAC8 /* TranslateKeyApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslateKeyApp.swift; sourceTree = "<group>"; };
+		91E1CADA8CA08D9F2D23CE59 /* KeyboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardView.swift; sourceTree = "<group>"; };
+		D4BFB7282A7E1B9BE806B622 /* TranslateKey.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TranslateKey.entitlements; sourceTree = "<group>"; };
+		F568CF3C553AC06723103677 /* TranslateKeyboard.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = TranslateKeyboard.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		FDFAE4F6F91A42C4AE845CFA /* SwipeEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwipeEngine.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		B5D1E3F4A2C6870135FC8D40 /* Emoji */ = {
+			isa = PBXGroup;
+			children = (
+				A7E3F1D2B4C8965013FA7B2E /* EmojiStore.swift */,
+			);
+			path = Emoji;
+			sourceTree = "<group>";
+		};
+		3FDB7801F49F183E3597B33D /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				91E1CADA8CA08D9F2D23CE59 /* KeyboardView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		421E8F34F1A77C6E717A0E5B /* SwipeTyping */ = {
+			isa = PBXGroup;
+			children = (
+				FDFAE4F6F91A42C4AE845CFA /* SwipeEngine.swift */,
+			);
+			path = SwipeTyping;
+			sourceTree = "<group>";
+		};
+		46EE9926C38B6E37277B0329 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				57BFD4E0EBF55416A3AE5C43 /* TranslateKey.app */,
+				F568CF3C553AC06723103677 /* TranslateKeyboard.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		500F1E3270F25DDDDE1913AF = {
+			isa = PBXGroup;
+			children = (
+				A293503AAD86BC94EE5B047D /* App */,
+				66E8836A7B8B9BA036B34F30 /* Keyboard */,
+				C9154C994CDCD36A1A5AB84E /* Shared */,
+				46EE9926C38B6E37277B0329 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		66E8836A7B8B9BA036B34F30 /* Keyboard */ = {
+			isa = PBXGroup;
+			children = (
+				64E91ED9B9956C89AFA76120 /* Info.plist */,
+				6E00A03746403A288E4E4BA9 /* KeyboardViewController.swift */,
+				64D553C1A6C288F442CDA69F /* TranslateKeyboard.entitlements */,
+				B5D1E3F4A2C6870135FC8D40 /* Emoji */,
+				421E8F34F1A77C6E717A0E5B /* SwipeTyping */,
+				3FDB7801F49F183E3597B33D /* Views */,
+			);
+			path = Keyboard;
+			sourceTree = "<group>";
+		};
+		A293503AAD86BC94EE5B047D /* App */ = {
+			isa = PBXGroup;
+			children = (
+				52859EF9A28B17E172CF5D3B /* Assets.xcassets */,
+				7DD12920EDBC9DDFD48978EF /* ContentView.swift */,
+				200156579D88EF0FAEF505DB /* Info.plist */,
+				D4BFB7282A7E1B9BE806B622 /* TranslateKey.entitlements */,
+				891A077653492C97216ADAC8 /* TranslateKeyApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		C9154C994CDCD36A1A5AB84E /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				174C85225A3A8D6DAC70DFC5 /* Constants.swift */,
+				1F4C5F65CFC8C3BE14C5F9DD /* LanguageManager.swift */,
+				583894633504E236A865057C /* TranslationService.swift */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		1CD1E24CF16253A67C66BA5F /* TranslateKeyboard */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E6D9204DCDACF49E19523494 /* Build configuration list for PBXNativeTarget "TranslateKeyboard" */;
+			buildPhases = (
+				9C3D1809B42D9BC9D54EC578 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = TranslateKeyboard;
+			packageProductDependencies = (
+			);
+			productName = TranslateKeyboard;
+			productReference = F568CF3C553AC06723103677 /* TranslateKeyboard.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		4295373C9238477E0CFB6C8A /* TranslateKey */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 64609F5E0043C5C08435A41D /* Build configuration list for PBXNativeTarget "TranslateKey" */;
+			buildPhases = (
+				AB6A6E61768A0FD0FBF628DC /* Sources */,
+				22EE69A21AB38BEC464C83E9 /* Resources */,
+				C79D0BEF49A20AAC64D93F96 /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				528E278D3446817817453436 /* PBXTargetDependency */,
+			);
+			name = TranslateKey;
+			packageProductDependencies = (
+			);
+			productName = TranslateKey;
+			productReference = 57BFD4E0EBF55416A3AE5C43 /* TranslateKey.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		1524C205270FDC2B9F3B9AEA /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 2620;
+			};
+			buildConfigurationList = E5B00435519A211A0E5D2F2E /* Build configuration list for PBXProject "TranslateKey" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 500F1E3270F25DDDDE1913AF;
+			minimizedProjectReferenceProxies = 1;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				4295373C9238477E0CFB6C8A /* TranslateKey */,
+				1CD1E24CF16253A67C66BA5F /* TranslateKeyboard */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		22EE69A21AB38BEC464C83E9 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D39B8ED905E270A6931D6C13 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		9C3D1809B42D9BC9D54EC578 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3025ABE1B651ACB33D14C2F1 /* Constants.swift in Sources */,
+				D8F4A2E1C3B7850924EB6C3F /* EmojiStore.swift in Sources */,
+				0DD19EF77F0FACF98FC69C96 /* KeyboardView.swift in Sources */,
+				1A5BA574434935232588A834 /* KeyboardViewController.swift in Sources */,
+				C7090D97885EF5FFC8DA2580 /* LanguageManager.swift in Sources */,
+				95E617C7AE7D9D43BEA8E07D /* SwipeEngine.swift in Sources */,
+				61C8A3FD912E12D5E246C156 /* TranslationService.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AB6A6E61768A0FD0FBF628DC /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B45A306C4986CDB6CD47AB3F /* Constants.swift in Sources */,
+				46236A3A551930719EAD72D4 /* ContentView.swift in Sources */,
+				02DCAF900ED62F1C427DBC1C /* LanguageManager.swift in Sources */,
+				87D7582BDDEF3DB7E4763107 /* TranslateKeyApp.swift in Sources */,
+				06767375CB5D4427390C6E0C /* TranslationService.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		528E278D3446817817453436 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 1CD1E24CF16253A67C66BA5F /* TranslateKeyboard */;
+			targetProxy = CA0E609BA3F363CD9033C384 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		13CD4B05B0F5499852AF3D11 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = App/TranslateKey.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = U74SHCZ4K7;
+				INFOPLIST_FILE = App/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.translatekey.app;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		337D9D99CDF7B1D6E1B2A186 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Keyboard/TranslateKeyboard.entitlements;
+				DEVELOPMENT_TEAM = U74SHCZ4K7;
+				INFOPLIST_FILE = Keyboard/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.translatekey.app.keyboard;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		791FFCEBF0270FEF74B054DE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = App/TranslateKey.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = U74SHCZ4K7;
+				INFOPLIST_FILE = App/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.translatekey.app;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		C27A0FC14FC040B584BDC600 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Keyboard/TranslateKeyboard.entitlements;
+				DEVELOPMENT_TEAM = U74SHCZ4K7;
+				INFOPLIST_FILE = Keyboard/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.translatekey.app.keyboard;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		F1AD6D5E601D77BFBFF4ADD1 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		F2A6C7E621557BBB7B4910AF /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		64609F5E0043C5C08435A41D /* Build configuration list for PBXNativeTarget "TranslateKey" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				13CD4B05B0F5499852AF3D11 /* Debug */,
+				791FFCEBF0270FEF74B054DE /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		E5B00435519A211A0E5D2F2E /* Build configuration list for PBXProject "TranslateKey" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F1AD6D5E601D77BFBFF4ADD1 /* Debug */,
+				F2A6C7E621557BBB7B4910AF /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		E6D9204DCDACF49E19523494 /* Build configuration list for PBXNativeTarget "TranslateKeyboard" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C27A0FC14FC040B584BDC600 /* Debug */,
+				337D9D99CDF7B1D6E1B2A186 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 1524C205270FDC2B9F3B9AEA /* Project object */;
+}
