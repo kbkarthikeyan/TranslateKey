@@ -461,7 +461,7 @@ struct KeyboardView: View {
                             emojiHistory.recordUsage(emoji)
                         } label: {
                             Text(emoji)
-                                .font(.system(size: 33))
+                                .font(.system(size: 38))
                                 .frame(maxWidth: .infinity)
                                 .frame(height: 41)
                         }
@@ -554,14 +554,14 @@ struct KeyboardView: View {
                                     emojiHistory.recordUsage(emoji)
                                 } label: {
                                     Text(emoji)
-                                        .font(.system(size: 22))
+                                        .font(.system(size: 38))
                                 }
                                 .buttonStyle(.plain)
                             }
                         }
                         .padding(.horizontal, 6)
                     }
-                    .frame(height: 28)
+                    .frame(height: 44)
                 }
 
                 // Search results grid (scrollable, takes remaining space)
@@ -573,7 +573,7 @@ struct KeyboardView: View {
                                 emojiHistory.recordUsage(emoji)
                             } label: {
                                 Text(emoji)
-                                    .font(.system(size: 33))
+                                    .font(.system(size: 38))
                                     .frame(maxWidth: .infinity)
                                     .frame(height: keyHeight)
                             }
