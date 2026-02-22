@@ -504,90 +504,147 @@ struct KeyboardView: View {
     private var emojiSearchView: some View {
         let columns = Array(repeating: GridItem(.flexible(), spacing: 4), count: 8)
         let results = EmojiSearch.search(emojiSearchText)
+        let rows = Self.localizedLetterRows
 
-        return VStack(spacing: 4) {
-            // Active search field
-            HStack(spacing: 6) {
-                Image(systemName: "magnifyingglass")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                TextField("Search emojis...", text: $emojiSearchText)
-                    .font(.subheadline)
-                    .textInputAutocapitalization(.never)
-                    .disableAutocorrection(true)
-                if !emojiSearchText.isEmpty {
-                    Button {
-                        emojiSearchText = ""
-                    } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
+        return GeometryReader { geo in
+            let totalWidth = geo.size.width
+            let topCount = rows[0].count
+            let row2Pad = CGFloat(topCount - rows[1].count) * (totalWidth + keySpacing) / CGFloat(2 * topCount)
+
+            VStack(spacing: 4) {
+                // Search text display (not a TextField — we ARE the keyboard)
+                HStack(spacing: 6) {
+                    Image(systemName: "magnifyingglass")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    Text(emojiSearchText.isEmpty ? "Search emojis..." : emojiSearchText)
+                        .font(.subheadline)
+                        .foregroundStyle(emojiSearchText.isEmpty ? .secondary : .primary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .lineLimit(1)
+                    if !emojiSearchText.isEmpty {
+                        Button {
+                            emojiSearchText = ""
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
-            }
-            .padding(.horizontal, 10)
-            .frame(height: 32)
-            .modifier(GlassBarBackground())
-            .padding(.horizontal, 2)
+                .padding(.horizontal, 10)
+                .frame(height: 32)
+                .modifier(GlassBarBackground())
+                .padding(.horizontal, 2)
 
-            // Frequently used row
-            if !emojiHistory.frequentEmojis.isEmpty {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 4) {
-                        Text("FQ:")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                        ForEach(emojiHistory.frequentEmojis, id: \.self) { emoji in
+                // Frequently used row
+                if !emojiHistory.frequentEmojis.isEmpty {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 4) {
+                            Text("FQ:")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                            ForEach(emojiHistory.frequentEmojis, id: \.self) { emoji in
+                                Button {
+                                    context.insertText(emoji)
+                                    emojiHistory.recordUsage(emoji)
+                                } label: {
+                                    Text(emoji)
+                                        .font(.system(size: 22))
+                                }
+                            }
+                        }
+                        .padding(.horizontal, 6)
+                    }
+                    .frame(height: 28)
+                }
+
+                // Search results grid (scrollable, takes remaining space)
+                ScrollView {
+                    LazyVGrid(columns: columns, spacing: 4) {
+                        ForEach(results, id: \.self) { emoji in
                             Button {
                                 context.insertText(emoji)
                                 emojiHistory.recordUsage(emoji)
                             } label: {
                                 Text(emoji)
-                                    .font(.system(size: 22))
+                                    .font(.system(size: 28))
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 38)
                             }
+                            .buttonStyle(KeyButtonStyle())
                         }
                     }
-                    .padding(.horizontal, 6)
+                    .padding(.horizontal, 2)
                 }
-                .frame(height: 28)
-            }
 
-            // Search results grid
-            ScrollView {
-                LazyVGrid(columns: columns, spacing: 4) {
-                    ForEach(results, id: \.self) { emoji in
+                // Letter keyboard for typing search query
+                VStack(spacing: 6) {
+                    HStack(spacing: keySpacing) {
+                        ForEach(rows[0], id: \.self) { key in
+                            searchLetterKey(key)
+                        }
+                    }
+                    HStack(spacing: keySpacing) {
+                        ForEach(rows[1], id: \.self) { key in
+                            searchLetterKey(key)
+                        }
+                    }
+                    .padding(.horizontal, row2Pad)
+                    HStack(spacing: keySpacing) {
+                        ForEach(rows[2], id: \.self) { key in
+                            searchLetterKey(key)
+                        }
+                        // Backspace in the letter row
                         Button {
-                            context.insertText(emoji)
-                            emojiHistory.recordUsage(emoji)
+                            if !emojiSearchText.isEmpty {
+                                emojiSearchText.removeLast()
+                            }
                         } label: {
-                            Text(emoji)
-                                .font(.system(size: 28))
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 41)
+                            Image(systemName: "delete.left")
+                                .font(.subheadline)
+                                .frame(width: 44, height: 36)
+                                .modifier(ActionKeyBackgroundModifier(tint: nil))
+                                .foregroundStyle(.primary)
                         }
-                        .buttonStyle(KeyButtonStyle())
                     }
                 }
-                .padding(.horizontal, 2)
-            }
 
-            // Bottom row: backspace + space + Done
-            emojiSearchBottomRow
+                // Bottom row: space + Done
+                HStack(spacing: keySpacing) {
+                    // Space (appends to search text)
+                    Button {
+                        emojiSearchText.append(" ")
+                    } label: {
+                        Text("space")
+                            .font(.subheadline)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 36)
+                            .modifier(KeyBackgroundModifier())
+                            .foregroundStyle(.primary)
+                    }
+
+                    // Done button
+                    ActionKey(label: "Done", systemImage: nil, width: 72, tint: .blue) {
+                        isEmojiSearching = false
+                        emojiSearchText = ""
+                    }
+                }
+            }
         }
     }
 
-    private var emojiSearchBottomRow: some View {
-        HStack(spacing: keySpacing) {
-            DeleteKey(context: context, width: 44)
-
-            // Space bar
-            SpaceKey(context: context)
-
-            // Done button
-            ActionKey(label: "Done", systemImage: nil, width: 72, tint: .blue) {
-                isEmojiSearching = false
-                emojiSearchText = ""
-            }
+    /// A letter key that appends to `emojiSearchText` instead of inserting into the text field.
+    private func searchLetterKey(_ key: String) -> some View {
+        Button {
+            emojiSearchText.append(key)
+        } label: {
+            Text(key)
+                .font(.system(size: 18, weight: .light))
+                .frame(maxWidth: .infinity)
+                .frame(height: 36)
+                .modifier(KeyBackgroundModifier())
+                .foregroundStyle(.primary)
         }
     }
 

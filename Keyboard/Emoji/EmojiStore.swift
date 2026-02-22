@@ -17,15 +17,15 @@ enum EmojiCategory: String, CaseIterable, Identifiable {
 
     var icon: String {
         switch self {
-        case .frequentlyUsed: "clock"
+        case .frequentlyUsed: "clock.arrow.circlepath"
         case .smileys:        "face.smiling"
         case .people:         "person"
-        case .animals:        "pawprint"
+        case .animals:        "pawprint.fill"
         case .food:           "fork.knife"
-        case .travel:         "car"
-        case .objects:        "lightbulb"
+        case .travel:         "car.fill"
+        case .objects:        "lightbulb.fill"
         case .symbols:        "number"
-        case .flags:          "flag"
+        case .flags:          "flag.fill"
         }
     }
 
