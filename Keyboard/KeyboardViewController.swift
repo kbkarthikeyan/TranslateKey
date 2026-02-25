@@ -107,11 +107,11 @@ final class KeyboardContext {
     var isSymbolMode = false
     var returnKeyLabel = "return"
 
-    /// Last text that was auto-translated (to avoid re-translating identical content)
-    var lastAutoTranslatedText: String = ""
-
     /// Fires when text changes in the text field (for debounced auto-translate in Send mode)
     @ObservationIgnored var textChangeGeneration: Int = 0
+
+    /// Callback for AutoTranslateController — bridges text changes without altering observation.
+    @ObservationIgnored var onTextChangedCallback: (() -> Void)?
 
     /// Fires when keyboard becomes visible (for clipboard check in Read mode)
     @ObservationIgnored var keyboardAppearGeneration: Int = 0
@@ -724,6 +724,7 @@ final class KeyboardContext {
     func onTextChanged() {
         textChangeGeneration &+= 1
         updatePredictions()
+        onTextChangedCallback?()
     }
 
     func onKeyboardAppeared() {

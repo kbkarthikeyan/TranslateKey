@@ -6,6 +6,7 @@ struct KeyboardView: View {
 
     @State private var languageManager = LanguageManager()
     @State private var translationService = TranslationService()
+    @State private var autoTranslateController = AutoTranslateController()
     @State private var isEmojiMode = false
     @State private var emojiHistory = EmojiHistoryManager()
     @State private var selectedCategory: EmojiCategory = .smileys
@@ -72,6 +73,26 @@ struct KeyboardView: View {
             context.sourceLanguageCode = newValue
             context.activateIME(for: newValue)
         }
+        .onAppear {
+            context.onTextChangedCallback = { [autoTranslateController, languageManager, translationService, context] in
+                autoTranslateController.textDidChange(
+                    getText: { context.getCurrentText() },
+                    isEnabled: languageManager.isAutoTranslateEnabled,
+                    translationService: translationService,
+                    fromLang: languageManager.sourceLanguage,
+                    toLang: languageManager.targetLanguage,
+                    fromLangID: languageManager.sourceLanguageID,
+                    toLangID: languageManager.targetLanguageID
+                )
+            }
+            translationService.prewarmSession(
+                source: languageManager.sourceLanguage,
+                target: languageManager.targetLanguage
+            )
+        }
+        .onChange(of: languageManager.targetLanguageID) { _, _ in
+            autoTranslateController.clearState()
+        }
         .translationTask(translationService.configuration) { session in
             await translationService.performTranslation(using: session)
         }
@@ -116,6 +137,7 @@ struct KeyboardView: View {
             Button {
                 let text = context.getCurrentText()
                 guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+                autoTranslateController.clearState()
                 translationService.requestTranslation(
                     of: text,
                     from: languageManager.sourceLanguage,
@@ -136,6 +158,7 @@ struct KeyboardView: View {
                 guard let pasted = UIPasteboard.general.string,
                       !pasted.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
                 mode = .incoming
+                autoTranslateController.clearState()
                 translationService.requestTranslation(
                     of: pasted,
                     from: languageManager.targetLanguage,
@@ -153,11 +176,29 @@ struct KeyboardView: View {
 
     // MARK: - Translation Bar
 
+    private var displayedTranslation: String {
+        if !translationService.translatedText.isEmpty {
+            return translationService.translatedText
+        }
+        return autoTranslateController.autoTranslatedText
+    }
+
+    private var isAnyTranslating: Bool {
+        translationService.isTranslating || autoTranslateController.isAutoTranslating
+    }
+
+    private func insertTranslation() {
+        guard !displayedTranslation.isEmpty else { return }
+        context.replaceAllText(with: displayedTranslation)
+        translationService.translatedText = ""
+        autoTranslateController.clearState()
+    }
+
     private var translationBar: some View {
         HStack(spacing: 6) {
             // Translation output / status
             Group {
-                if translationService.isTranslating {
+                if isAnyTranslating {
                     HStack(spacing: 6) {
                         ProgressView()
                             .scaleEffect(0.7)
@@ -169,14 +210,17 @@ struct KeyboardView: View {
                     Text(error)
                         .font(.subheadline)
                         .foregroundStyle(.red)
-                } else if !translationService.translatedText.isEmpty {
+                } else if !displayedTranslation.isEmpty {
                     ScrollView(.vertical, showsIndicators: true) {
-                        Text(translationService.translatedText)
+                        Text(displayedTranslation)
                             .font(.body)
                             .foregroundStyle(.primary)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     .frame(maxHeight: 54)
+                    .onTapGesture {
+                        insertTranslation()
+                    }
                 } else {
                     Color.clear
                 }
@@ -184,10 +228,9 @@ struct KeyboardView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
 
             // Insert button
-            if !translationService.translatedText.isEmpty {
+            if !displayedTranslation.isEmpty {
                 Button {
-                    context.replaceAllText(with: translationService.translatedText)
-                    translationService.translatedText = ""
+                    insertTranslation()
                 } label: {
                     Image(systemName: "arrow.down.doc")
                         .font(.subheadline.bold())
