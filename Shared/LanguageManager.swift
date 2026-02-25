@@ -84,13 +84,6 @@ final class LanguageManager {
         self.isAutoTranslateEnabled = defaults?.object(forKey: AppConstants.autoTranslateEnabledKey) as? Bool ?? true
     }
 
-    // DEAD CODE: no UI calls this — kept for potential future use
-    // func swapLanguages() {
-    //     let temp = sourceLanguageID
-    //     sourceLanguageID = targetLanguageID
-    //     targetLanguageID = temp
-    // }
-
     func selectTarget(_ id: String) {
         targetLanguageID = id
     }

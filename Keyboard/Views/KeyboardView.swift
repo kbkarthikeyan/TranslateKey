@@ -16,9 +16,9 @@ struct KeyboardView: View {
     /// - .outgoing: user types in source, translates to target (sending messages)
     /// - .incoming: user pastes foreign text, translates to source (reading messages)
     @State private var mode: TranslationMode = .outgoing
-    private let keySpacing: CGFloat = 6
-    private let rowSpacing: CGFloat = 9
-    private let keyHeight: CGFloat = 41
+    private let keySpacing = KeyboardLayout.keySpacing
+    private let rowSpacing = KeyboardLayout.rowSpacing
+    private let keyHeight = KeyboardLayout.keyHeight
 
     enum TranslationMode {
         case outgoing  // typing → translate to target language
@@ -48,11 +48,30 @@ struct KeyboardView: View {
                     .padding(.bottom, 2)
             }
 
+            // IME composition + candidate bar
+            if !context.compositionDisplay.isEmpty && !isEmojiMode {
+                imeCompositionBar
+                    .padding(.horizontal, 4)
+                    .padding(.bottom, 2)
+            }
+            if !context.imeCandidates.isEmpty && !isEmojiMode {
+                CandidateBar(candidates: context.imeCandidates) { index in
+                    context.imeAcceptCandidate(at: index)
+                }
+                .modifier(GlassBarBackground())
+                .padding(.horizontal, 4)
+                .padding(.bottom, 2)
+            }
+
             keyRows
                 .padding(.horizontal, 3)
                 .padding(.bottom, 2)
         }
         .background(keyboardBackground)
+        .onChange(of: languageManager.sourceLanguageID, initial: true) { _, newValue in
+            context.sourceLanguageCode = newValue
+            context.activateIME(for: newValue)
+        }
         .translationTask(translationService.configuration) { session in
             await translationService.performTranslation(using: session)
         }
@@ -213,13 +232,13 @@ struct KeyboardView: View {
                     context.acceptPrediction(word)
                 } label: {
                     Text(word)
-                        .font(.system(size: 15))
+                        .font(.system(size: 15, weight: index == 0 ? .semibold : .regular))
                         .lineLimit(1)
                         .frame(maxWidth: .infinity)
                         .frame(height: 36)
                         .contentShape(Rectangle())
                 }
-                .foregroundStyle(.primary)
+                .foregroundStyle(index == 0 ? .primary : .secondary)
             }
         }
         .modifier(GlassBarBackground())
@@ -238,7 +257,14 @@ struct KeyboardView: View {
                 numberKeys
             }
         } else {
-            letterKeys
+            switch languageManager.sourceLanguageID {
+            case "ar":
+                arabicKeys
+            case "ko":
+                koreanKeys
+            default:
+                letterKeys  // includes zh-Hans, zh-Hant, ja (QWERTY + IME)
+            }
         }
     }
 
@@ -256,8 +282,13 @@ struct KeyboardView: View {
                 ZStack(alignment: .top) {
                     VStack(spacing: rowSpacing) {
                         HStack(spacing: keySpacing) {
-                            ForEach(rows[0], id: \.self) { key in
-                                CharacterKey(label: displayChar(key), context: context, character: key)
+                            ForEach(Array(rows[0].enumerated()), id: \.element) { index, key in
+                                CharacterKey(
+                                    label: displayChar(key),
+                                    context: context,
+                                    character: key,
+                                    numberHint: "\(index == 9 ? 0 : index + 1)"
+                                )
                             }
                         }
 
@@ -675,6 +706,97 @@ struct KeyboardView: View {
         .buttonStyle(.plain)
     }
 
+    // MARK: - IME Composition Bar
+
+    private var imeCompositionBar: some View {
+        Text(context.compositionDisplay)
+            .font(.system(size: 15, weight: .medium))
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(height: 28)
+            .padding(.horizontal, 8)
+            .modifier(GlassBarBackground())
+    }
+
+    // MARK: - Arabic Keys
+
+    private var arabicKeys: some View {
+        let rows = ArabicLayout.rows(shifted: context.isShiftActive || context.isCapsLock)
+
+        return VStack(spacing: rowSpacing) {
+            HStack(spacing: keySpacing) {
+                ForEach(rows[0], id: \.self) { key in
+                    CharacterKey(label: key, context: context, character: key, isLiteral: true)
+                }
+            }
+            HStack(spacing: keySpacing) {
+                ForEach(rows[1], id: \.self) { key in
+                    CharacterKey(label: key, context: context, character: key, isLiteral: true)
+                }
+            }
+            HStack(spacing: keySpacing) {
+                ActionKey(
+                    label: context.isCapsLock ? "capslock" : "shift",
+                    systemImage: context.isCapsLock ? "capslock.fill"
+                        : (context.isShiftActive ? "shift.fill" : "shift"),
+                    width: 44
+                ) {
+                    context.toggleShift()
+                }
+
+                ForEach(rows[2], id: \.self) { key in
+                    CharacterKey(label: key, context: context, character: key, isLiteral: true)
+                }
+
+                DeleteKey(context: context, width: 44)
+            }
+            bottomRow
+        }
+    }
+
+    // MARK: - Korean Keys
+
+    private var koreanKeys: some View {
+        let rows = KoreanLayout.rows(shifted: context.isShiftActive || context.isCapsLock)
+
+        return GeometryReader { geo in
+            let totalWidth = geo.size.width
+            let topCount = rows[0].count
+            let row2Pad = CGFloat(topCount - rows[1].count) * (totalWidth + keySpacing) / CGFloat(2 * topCount)
+
+            VStack(spacing: rowSpacing) {
+                HStack(spacing: keySpacing) {
+                    ForEach(rows[0], id: \.self) { key in
+                        CharacterKey(label: key, context: context, character: key, isLiteral: true)
+                    }
+                }
+                HStack(spacing: keySpacing) {
+                    ForEach(rows[1], id: \.self) { key in
+                        CharacterKey(label: key, context: context, character: key, isLiteral: true)
+                    }
+                }
+                .padding(.horizontal, row2Pad)
+                HStack(spacing: keySpacing) {
+                    ActionKey(
+                        label: context.isCapsLock ? "capslock" : "shift",
+                        systemImage: context.isCapsLock ? "capslock.fill"
+                            : (context.isShiftActive ? "shift.fill" : "shift"),
+                        width: 44
+                    ) {
+                        context.toggleShift()
+                    }
+
+                    ForEach(rows[2], id: \.self) { key in
+                        CharacterKey(label: key, context: context, character: key, isLiteral: true)
+                    }
+
+                    DeleteKey(context: context, width: 44)
+                }
+                bottomRow
+            }
+        }
+        .frame(height: 4 * keyHeight + 3 * rowSpacing)
+    }
+
     // MARK: - Helpers
 
     private func displayChar(_ char: String) -> String {
@@ -686,31 +808,7 @@ struct KeyboardView: View {
         Color(.secondarySystemBackground)
     }
 
-    /// Letter rows matching the device's keyboard layout convention.
-    /// Static — locale doesn't change while the extension is running.
-    private static let localizedLetterRows: [[String]] = {
-        let lang = Locale.current.language.languageCode?.identifier ?? "en"
-        switch lang {
-        case "fr":
-            return [
-                ["a", "z", "e", "r", "t", "y", "u", "i", "o", "p"],
-                ["q", "s", "d", "f", "g", "h", "j", "k", "l", "m"],
-                ["w", "x", "c", "v", "b", "n"],
-            ]
-        case "de":
-            return [
-                ["q", "w", "e", "r", "t", "z", "u", "i", "o", "p"],
-                ["a", "s", "d", "f", "g", "h", "j", "k", "l"],
-                ["y", "x", "c", "v", "b", "n", "m"],
-            ]
-        default:
-            return [
-                ["q", "w", "e", "r", "t", "y", "u", "i", "o", "p"],
-                ["a", "s", "d", "f", "g", "h", "j", "k", "l"],
-                ["z", "x", "c", "v", "b", "n", "m"],
-            ]
-        }
-    }()
+    private static let localizedLetterRows = KeyboardLayout.letterRows
 
 }
 
@@ -721,7 +819,16 @@ private struct CharacterKey: View {
     let context: KeyboardContext
     let character: String
     var isLiteral: Bool = false
+    var numberHint: String? = nil
     @State private var isPressed = false
+    @State private var isDiacriticsMode = false
+    @State private var diacriticsVariants: [String] = []
+    @State private var selectedVariantIndex = 0
+    @State private var diacriticsTimer: Timer?
+    @State private var dragOrigin: CGFloat = 0
+
+    private let diacriticsDelay: TimeInterval = 0.25  // 250ms
+    private let pointsPerVariant: CGFloat = 36
 
     var body: some View {
         Text(label)
@@ -731,9 +838,26 @@ private struct CharacterKey: View {
             .modifier(KeyBackgroundModifier())
             .foregroundStyle(.primary)
             .contentShape(Rectangle())
-            .scaleEffect(isPressed ? 0.95 : 1.0)
+            .overlay(alignment: .topTrailing) {
+                if let hint = numberHint, !isPressed {
+                    Text(hint)
+                        .font(.system(size: 10))
+                        .foregroundStyle(.tertiary)
+                        .padding(.trailing, 4)
+                        .padding(.top, 2)
+                        .allowsHitTesting(false)
+                }
+            }
+            .scaleEffect(isPressed && !isDiacriticsMode ? 0.95 : 1.0)
             .overlay(alignment: .top) {
-                if isPressed {
+                if isDiacriticsMode && !diacriticsVariants.isEmpty {
+                    DiacriticsPopup(
+                        variants: diacriticsVariants,
+                        selectedIndex: selectedVariantIndex
+                    )
+                    .offset(y: -50)
+                    .allowsHitTesting(false)
+                } else if isPressed && !isDiacriticsMode {
                     Text(label)
                         .font(.system(size: 32, weight: .regular))
                         .frame(width: 48, height: 56)
@@ -744,17 +868,54 @@ private struct CharacterKey: View {
             }
             .gesture(
                 DragGesture(minimumDistance: 0)
-                    .onChanged { _ in
+                    .onChanged { value in
                         if !isPressed {
                             isPressed = true
                             context.insertCharacter(character)
+                            dragOrigin = value.location.x
+                            // Start diacritics timer if applicable
+                            if !isLiteral && !context.swipeActive {
+                                var variants: [String] = []
+                                if let hint = numberHint { variants.append(hint) }
+                                if let diacritics = DiacriticsMap.variants(for: label) {
+                                    variants.append(contentsOf: diacritics)
+                                }
+                                if !variants.isEmpty {
+                                    diacriticsVariants = variants
+                                    diacriticsTimer = Timer.scheduledTimer(withTimeInterval: diacriticsDelay, repeats: false) { _ in
+                                        MainActor.assumeIsolated {
+                                            guard !context.swipeActive else { return }
+                                            context.deleteBackward()
+                                            isDiacriticsMode = true
+                                            selectedVariantIndex = 0
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        if isDiacriticsMode && !diacriticsVariants.isEmpty {
+                            let delta = value.location.x - dragOrigin
+                            let idx = Int((delta + pointsPerVariant / 2) / pointsPerVariant)
+                            selectedVariantIndex = max(0, min(diacriticsVariants.count - 1, idx))
                         }
                     }
                     .onEnded { _ in
+                        diacriticsTimer?.invalidate()
+                        diacriticsTimer = nil
+                        if isDiacriticsMode && !diacriticsVariants.isEmpty {
+                            context.insertText(diacriticsVariants[selectedVariantIndex])
+                        }
                         isPressed = false
+                        isDiacriticsMode = false
+                        diacriticsVariants = []
                     }
             )
-            .onDisappear { isPressed = false }
+            .onDisappear {
+                isPressed = false
+                isDiacriticsMode = false
+                diacriticsTimer?.invalidate()
+                diacriticsTimer = nil
+            }
     }
 }
 
@@ -829,34 +990,75 @@ private struct DeleteKey: View {
     }
 }
 
-// MARK: - Space Key (touch-down firing)
+// MARK: - Space Key (tap to insert, hold+drag for trackpad cursor)
 
 private struct SpaceKey: View {
     let context: KeyboardContext
     @State private var isPressed = false
+    @State private var isTrackpadMode = false
+    @State private var dragOrigin: CGFloat = 0
+    @State private var accumulatedOffset: CGFloat = 0
+    @State private var trackpadTimer: Timer?
+
+    private let trackpadThreshold: TimeInterval = 0.2  // 200ms
+    private let pointsPerChar: CGFloat = 10
+
+    private var displayLabel: String {
+        context.predictions.first ?? "space"
+    }
+
+    private var showingPrediction: Bool {
+        context.predictions.first != nil
+    }
 
     var body: some View {
-        Text("space")
-            .font(.subheadline)
+        Text(isTrackpadMode ? "" : displayLabel)
+            .font(showingPrediction ? .system(size: 15, weight: .medium) : .subheadline)
             .frame(maxWidth: .infinity)
             .frame(height: 41)
             .modifier(KeyBackgroundModifier())
-            .foregroundStyle(.primary)
+            .foregroundStyle(showingPrediction ? .secondary : .primary)
             .contentShape(Rectangle())
-            .scaleEffect(isPressed ? 0.95 : 1.0)
+            .scaleEffect(isPressed && !isTrackpadMode ? 0.95 : 1.0)
             .gesture(
                 DragGesture(minimumDistance: 0)
-                    .onChanged { _ in
+                    .onChanged { value in
                         if !isPressed {
                             isPressed = true
-                            context.insertSpace()
+                            dragOrigin = value.location.x
+                            accumulatedOffset = 0
+                            // Start timer for trackpad activation
+                            trackpadTimer = Timer.scheduledTimer(withTimeInterval: trackpadThreshold, repeats: false) { _ in
+                                MainActor.assumeIsolated {
+                                    isTrackpadMode = true
+                                }
+                            }
+                        }
+                        if isTrackpadMode {
+                            let delta = value.location.x - dragOrigin - accumulatedOffset
+                            let chars = Int(delta / pointsPerChar)
+                            if chars != 0 {
+                                context.moveCursor(by: chars)
+                                accumulatedOffset += CGFloat(chars) * pointsPerChar
+                            }
                         }
                     }
                     .onEnded { _ in
+                        trackpadTimer?.invalidate()
+                        trackpadTimer = nil
+                        if !isTrackpadMode {
+                            context.insertSpace()
+                        }
                         isPressed = false
+                        isTrackpadMode = false
                     }
             )
-            .onDisappear { isPressed = false }
+            .onDisappear {
+                isPressed = false
+                isTrackpadMode = false
+                trackpadTimer?.invalidate()
+                trackpadTimer = nil
+            }
     }
 }
 

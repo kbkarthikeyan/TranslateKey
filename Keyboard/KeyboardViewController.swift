@@ -38,7 +38,7 @@ class KeyboardViewController: UIInputViewController, UIGestureRecognizerDelegate
         hostingController = hosting
 
         // Set keyboard height
-        let heightConstraint = view.heightAnchor.constraint(equalToConstant: 329)
+        let heightConstraint = view.heightAnchor.constraint(equalToConstant: KeyboardLayout.keyboardHeight)
         heightConstraint.priority = .defaultHigh
         heightConstraint.isActive = true
 
@@ -130,13 +130,28 @@ final class KeyboardContext {
     @ObservationIgnored private(set) var swipeActive = false
     @ObservationIgnored private var swipePath: [Character] = []
 
-    // Layout constants for key position mapping (must match KeyboardView)
-    private let kKeySpacing: CGFloat = 6
-    private let kRowSpacing: CGFloat = 9
-    private let kKeyHeight: CGFloat = 41
-    private let kKeyboardHeight: CGFloat = 329
-    private let kHorizontalPad: CGFloat = 3
-    private let kBottomPad: CGFloat = 2
+    /// Language code for UITextChecker (synced from LanguageManager in KeyboardView)
+    @ObservationIgnored var sourceLanguageCode: String = "en"
+
+    /// Personal word frequency tracker for boosting predictions
+    @ObservationIgnored let wordFrequencyTracker = WordFrequencyTracker()
+
+    // MARK: - IME State
+
+    /// Composition text shown above candidates (observed by SwiftUI).
+    var compositionDisplay: String = ""
+    /// IME candidate list (observed by SwiftUI).
+    var imeCandidates: [String] = []
+    /// Active IME engine (not observed — hidden from SwiftUI diffing).
+    @ObservationIgnored var activeIME: InputMethod?
+
+    // Layout constants — single source of truth in KeyboardLayout
+    private let kKeySpacing = KeyboardLayout.keySpacing
+    private let kRowSpacing = KeyboardLayout.rowSpacing
+    private let kKeyHeight = KeyboardLayout.keyHeight
+    private let kKeyboardHeight = KeyboardLayout.keyboardHeight
+    private let kHorizontalPad = KeyboardLayout.horizontalPad
+    private let kBottomPad = KeyboardLayout.bottomPad
 
     private var proxy: UITextDocumentProxy? {
         viewController?.textDocumentProxy
@@ -146,6 +161,15 @@ final class KeyboardContext {
     private static let wordTerminators: Set<Character> = [".", ",", "!", "?", ";", ":", "'", "\""]
 
     func insertCharacter(_ char: String) {
+        // Route through IME if active
+        if let ime = activeIME {
+            let key = (isShiftActive || isCapsLock) ? char.uppercased() : char.lowercased()
+            if ime.processKey(key) {
+                if isShiftActive && !isCapsLock { isShiftActive = false }
+                asyncFeedback()
+                return
+            }
+        }
         let text = (isShiftActive || isCapsLock) ? char.uppercased() : char.lowercased()
         // Static-only autocorrect on punctuation (instant, no UITextChecker)
         if let ch = text.first, Self.wordTerminators.contains(ch) {
@@ -156,16 +180,28 @@ final class KeyboardContext {
         proxy?.insertText(text)
         if isShiftActive && !isCapsLock { isShiftActive = false }
         if text == "." || text == "!" || text == "?" { isShiftActive = true }
+        if let ch = text.first, (isNumberMode || isSymbolMode), !ch.isLetter, !ch.isNumber {
+            isNumberMode = false
+            isSymbolMode = false
+        }
         asyncFeedback()
     }
 
     func deleteBackward() {
+        if imeBackspace() {
+            asyncFeedback()
+            return
+        }
         clearUndoCorrection()
         proxy?.deleteBackward()
         asyncFeedback()
     }
 
     func insertSpace() {
+        if imeSpace() {
+            asyncFeedback()
+            return
+        }
         let before = proxy?.documentContextBeforeInput
         if !predictions.isEmpty { predictions = []; lastPredictedPrefix = "" }
         clearUndoCorrection()
@@ -186,6 +222,10 @@ final class KeyboardContext {
         DispatchQueue.main.async { [self] in
             autoCorrectAfterSpace(originalBefore: capturedBefore)
             autoCapitalize(before: (capturedBefore ?? "") + " ")
+            if let b = capturedBefore {
+                let completed = extractLastWord(from: b)
+                if !completed.isEmpty { wordFrequencyTracker.recordWord(completed) }
+            }
         }
     }
 
@@ -203,11 +243,6 @@ final class KeyboardContext {
     }
 
     // MARK: - Feedback
-
-    // DEAD CODE: never called — views use asyncFeedback() directly
-    // func keyFeedback() {
-    //     asyncFeedback()
-    // }
 
     /// ALL feedback deferred — character appears with zero main-thread blocking.
     /// Throttled: only one pending closure at a time to prevent queue buildup during fast typing.
@@ -539,27 +574,54 @@ final class KeyboardContext {
         guard lastWord.count > 1 else { return }
         let lower = lastWord.lowercased()
 
-        // 1. Static dictionary
-        var correction = Self.corrections[lower]
-
-        // 2. UITextChecker (system dictionary)
-        if correction == nil {
-            let range = NSRange(0..<lower.utf16.count)
-            let misspelled = textChecker.rangeOfMisspelledWord(
-                in: lower, range: range, startingAt: 0, wrap: false, language: "en"
-            )
-            if misspelled.location != NSNotFound {
-                correction = textChecker.guesses(forWordRange: misspelled, in: lower, language: "en")?.first
-            }
+        // 1. Static dictionary (instant, stays on main)
+        if let staticCorrection = Self.corrections[lower] {
+            applyCorrection(staticCorrection, for: lastWord)
+            return
         }
 
-        guard let correction else { return }
+        // 2. UITextChecker → background
+        let capturedLanguage = sourceLanguageCode
+        Task { @MainActor in
+            let correction = await Self.spellCheckOnBackground(
+                word: lower, language: capturedLanguage
+            )
+            guard let correction else { return }
+            guard let current = proxy?.documentContextBeforeInput,
+                  current.hasSuffix(lastWord + " ") else { return }
+            applyCorrection(correction, for: lastWord)
+        }
+    }
 
-        // Verify context unchanged (user hasn't typed more since space)
+    /// Moves UITextChecker spell-check off the main thread.
+    nonisolated private static func spellCheckOnBackground(
+        word: String, language: String
+    ) async -> String? {
+        await withCheckedContinuation { continuation in
+            DispatchQueue.global(qos: .userInitiated).async {
+                let checker = UITextChecker()
+                let range = NSRange(0..<word.utf16.count)
+                let misspelled = checker.rangeOfMisspelledWord(
+                    in: word, range: range, startingAt: 0,
+                    wrap: false, language: language
+                )
+                guard misspelled.location != NSNotFound else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+                let guess = checker.guesses(
+                    forWordRange: misspelled, in: word, language: language
+                )?.first
+                continuation.resume(returning: guess)
+            }
+        }
+    }
+
+    /// Applies a correction for the last word (which is followed by a space).
+    /// Deletes word+space, inserts correction+space, preserves capitalization.
+    private func applyCorrection(_ correction: String, for lastWord: String) {
         guard let current = proxy?.documentContextBeforeInput,
               current.hasSuffix(lastWord + " ") else { return }
-
-        // Delete word + space, insert correction + space
         for _ in 0..<(lastWord.count + 1) {
             proxy?.deleteBackward()
         }
@@ -568,6 +630,7 @@ final class KeyboardContext {
         } else {
             proxy?.insertText(correction + " ")
         }
+        wordFrequencyTracker.recordWord(correction)
         setUndoCorrection(original: lastWord, correction: correction)
     }
 
@@ -592,6 +655,10 @@ final class KeyboardContext {
 
     func switchToNextKeyboard() {
         viewController?.advanceToNextInputMode()
+    }
+
+    func moveCursor(by offset: Int) {
+        proxy?.adjustTextPosition(byCharacterOffset: offset)
     }
 
     func toggleShift() {
@@ -661,6 +728,22 @@ final class KeyboardContext {
         DispatchQueue.main.async { [self] in
             feedbackGenerator.prepare()
         }
+        // Warm up heavy singletons in background so first use is instant
+        warmUpIfNeeded()
+    }
+
+    @ObservationIgnored private var didWarmUp = false
+
+    private func warmUpIfNeeded() {
+        guard !didWarmUp else { return }
+        didWarmUp = true
+        DispatchQueue.global(qos: .utility).async {
+            // SwipeEngine: triggers 50K word file parse + index build (~10ms)
+            _ = SwipeEngine.shared
+            // UITextChecker: first lexicon load stalls 100-200ms
+            let checker = UITextChecker()
+            _ = checker.completions(forPartialWordRange: NSRange(0..<2), in: "th", language: "en")
+        }
     }
 
     // MARK: - Word Predictions
@@ -688,25 +771,43 @@ final class KeyboardContext {
 
             // Heavy lexicon lookup off main thread to prevent UI freeze
             let capturedPrefix = prefix
+            let capturedLanguage = sourceLanguageCode
             let range = NSRange(0..<capturedPrefix.utf16.count)
-            let top = await Self.completionsOnBackground(prefix: capturedPrefix, range: range)
+            let systemResults = await Self.completionsOnBackground(prefix: capturedPrefix, range: range, language: capturedLanguage)
 
             guard !Task.isCancelled else { return }
+
+            let personalResults = wordFrequencyTracker.predictions(for: capturedPrefix)
+            var merged: [String] = []
+            var seen: Set<String> = []
+            for word in personalResults where merged.count < 3 {
+                let lower = word.lowercased()
+                guard !seen.contains(lower) else { continue }
+                seen.insert(lower)
+                merged.append(word)
+            }
+            for word in systemResults where merged.count < 3 {
+                let lower = word.lowercased()
+                guard !seen.contains(lower) else { continue }
+                seen.insert(lower)
+                merged.append(word)
+            }
+
             lastPredictedPrefix = capturedPrefix
-            if top != predictions { predictions = top }
+            if merged != predictions { predictions = merged }
         }
     }
 
     /// Runs UITextChecker.completions on a background thread (avoids main-thread freeze
     /// on first lexicon load and satisfies Swift 6 actor isolation).
     nonisolated private static func completionsOnBackground(
-        prefix: String, range: NSRange
+        prefix: String, range: NSRange, language: String
     ) async -> [String] {
         await withCheckedContinuation { continuation in
             DispatchQueue.global(qos: .userInitiated).async {
                 let checker = UITextChecker()
                 let results = checker.completions(
-                    forPartialWordRange: range, in: prefix, language: "en"
+                    forPartialWordRange: range, in: prefix, language: language
                 ) ?? []
                 continuation.resume(returning: Array(results.prefix(3)))
             }
@@ -720,6 +821,7 @@ final class KeyboardContext {
             proxy?.deleteBackward()
         }
         proxy?.insertText(word + " ")
+        wordFrequencyTracker.recordWord(word)
         predictions = []
         lastPredictedPrefix = ""
         clearUndoCorrection()
@@ -791,8 +893,13 @@ final class KeyboardContext {
         guard swipeActive, swipePath.count >= 2 else { swipeCancel(); return }
         if let word = SwipeEngine.shared.match(path: swipePath) {
             proxy?.insertText(word + " ")
-            asyncFeedback()
+            wordFrequencyTracker.recordWord(word)
+        } else {
+            // No match — insert path characters as best-effort fallback
+            let fallback = String(swipePath)
+            proxy?.insertText(fallback)
         }
+        asyncFeedback()
         swipePath = []
         swipeActive = false
         if !swipePreview.isEmpty { swipePreview = "" }
@@ -856,30 +963,66 @@ final class KeyboardContext {
         return rowKeys[idx].first
     }
 
-    /// Letter rows matching device locale (must match KeyboardView.localizedLetterRows).
-    /// Stored once, not recomputed per-call.
     @ObservationIgnored
-    private var cachedLetterRows: [[String]] = {
-        let lang = Locale.current.language.languageCode?.identifier ?? "en"
-        switch lang {
-        case "fr":
-            return [
-                ["a", "z", "e", "r", "t", "y", "u", "i", "o", "p"],
-                ["q", "s", "d", "f", "g", "h", "j", "k", "l", "m"],
-                ["w", "x", "c", "v", "b", "n"],
-            ]
-        case "de":
-            return [
-                ["q", "w", "e", "r", "t", "z", "u", "i", "o", "p"],
-                ["a", "s", "d", "f", "g", "h", "j", "k", "l"],
-                ["y", "x", "c", "v", "b", "n", "m"],
-            ]
+    private let cachedLetterRows = KeyboardLayout.letterRows
+
+    // MARK: - IME Integration
+
+    /// Activates the correct IME for a given language, or nil for Latin languages.
+    func activateIME(for languageID: String) {
+        activeIME?.reset()
+        activeIME = nil
+
+        let ime: InputMethod?
+        switch languageID {
+        case "zh-Hans":
+            ime = ChinesePinyinIME(traditional: false)
+        case "zh-Hant":
+            ime = ChinesePinyinIME(traditional: true)
+        case "ja":
+            ime = JapaneseIME()
+        case "ko":
+            ime = KoreanIME()
         default:
-            return [
-                ["q", "w", "e", "r", "t", "y", "u", "i", "o", "p"],
-                ["a", "s", "d", "f", "g", "h", "j", "k", "l"],
-                ["z", "x", "c", "v", "b", "n", "m"],
-            ]
+            ime = nil
         }
-    }()
+
+        if let ime {
+            ime.onStateChanged = { [weak self] in
+                guard let self else { return }
+                self.compositionDisplay = ime.displayText.isEmpty ? ime.compositionText : ime.displayText
+                self.imeCandidates = ime.candidates
+            }
+            ime.onCommit = { [weak self] text in
+                self?.proxy?.insertText(text)
+            }
+        }
+        activeIME = ime
+        compositionDisplay = ""
+        imeCandidates = []
+    }
+
+    /// Routes character input through the active IME. Returns false if no IME.
+    func imeInsertCharacter(_ char: String) -> Bool {
+        guard let ime = activeIME else { return false }
+        return ime.processKey(char)
+    }
+
+    /// Routes backspace through the active IME. Returns false if no IME.
+    func imeBackspace() -> Bool {
+        guard let ime = activeIME else { return false }
+        return ime.processBackspace()
+    }
+
+    /// Routes space through the active IME. Returns false if no IME.
+    func imeSpace() -> Bool {
+        guard let ime = activeIME else { return false }
+        return ime.processSpace()
+    }
+
+    /// Accept a candidate by index.
+    func imeAcceptCandidate(at index: Int) {
+        activeIME?.acceptCandidate(at: index)
+        asyncFeedback()
+    }
 }
