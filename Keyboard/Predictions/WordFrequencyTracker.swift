@@ -64,7 +64,7 @@ final class WordFrequencyTracker {
     private func debouncePersist() {
         persistTimer?.invalidate()
         persistTimer = Timer.scheduledTimer(withTimeInterval: 3.0, repeats: false) { [weak self] _ in
-            MainActor.assumeIsolated {
+            DispatchQueue.main.async {
                 self?.persist()
             }
         }

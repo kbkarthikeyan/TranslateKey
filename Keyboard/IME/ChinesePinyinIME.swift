@@ -16,7 +16,9 @@ final class ChinesePinyinIME: InputMethod {
     private let isTraditional: Bool
 
     /// Pinyin dictionary: syllable → [characters]
-    private static var dict: [String: [String]] = {
+    /// nonisolated(unsafe) is safe here — Swift static var uses dispatch_once,
+    /// so initialization is inherently thread-safe. Allows background preloading.
+    nonisolated(unsafe) private static var dict: [String: [String]] = {
         guard let url = Bundle.main.url(forResource: "pinyin_dict", withExtension: "txt"),
               let content = try? String(contentsOf: url, encoding: .utf8) else {
             assertionFailure("pinyin_dict.txt missing from bundle")
@@ -58,6 +60,13 @@ final class ChinesePinyinIME: InputMethod {
     private static var validSyllables: Set<String> = {
         Set(dict.keys)
     }()
+
+    /// Triggers lazy dict initialization from a background thread.
+    /// Swift static var init is thread-safe (dispatch_once), so subsequent
+    /// access from main thread returns instantly with no blocking.
+    nonisolated static func preloadDict() {
+        _ = dict
+    }
 
     init(traditional: Bool = false) {
         self.isTraditional = traditional

@@ -278,7 +278,11 @@ final class KeyboardContext {
 
     // MARK: - Auto-Correction (UITextChecker + static fallback)
 
-    @ObservationIgnored private lazy var textChecker = UITextChecker()
+    /// Shared background UITextChecker — single instance for all spell-check operations.
+    private static let backgroundChecker = UITextChecker()
+    private static let checkerQueue = DispatchQueue(label: "spellcheck", qos: .userInitiated)
+
+    @ObservationIgnored private var autocorrectTask: Task<Void, Never>?
 
     /// Static autocorrect dictionary: contractions, adjacent-key errors, transpositions,
     /// missing/double letter typos, and common misspellings. Only unambiguous pairs
@@ -582,10 +586,12 @@ final class KeyboardContext {
 
         // 2. UITextChecker → background
         let capturedLanguage = sourceLanguageCode
-        Task { @MainActor in
+        autocorrectTask?.cancel()
+        autocorrectTask = Task { @MainActor in
             let correction = await Self.spellCheckOnBackground(
                 word: lower, language: capturedLanguage
             )
+            guard !Task.isCancelled else { return }
             guard let correction else { return }
             guard let current = proxy?.documentContextBeforeInput,
                   current.hasSuffix(lastWord + " ") else { return }
@@ -593,15 +599,14 @@ final class KeyboardContext {
         }
     }
 
-    /// Moves UITextChecker spell-check off the main thread.
+    /// Moves UITextChecker spell-check off the main thread using the shared checker.
     nonisolated private static func spellCheckOnBackground(
         word: String, language: String
     ) async -> String? {
         await withCheckedContinuation { continuation in
-            DispatchQueue.global(qos: .userInitiated).async {
-                let checker = UITextChecker()
+            checkerQueue.async {
                 let range = NSRange(0..<word.utf16.count)
-                let misspelled = checker.rangeOfMisspelledWord(
+                let misspelled = backgroundChecker.rangeOfMisspelledWord(
                     in: word, range: range, startingAt: 0,
                     wrap: false, language: language
                 )
@@ -609,7 +614,7 @@ final class KeyboardContext {
                     continuation.resume(returning: nil)
                     return
                 }
-                let guess = checker.guesses(
+                let guess = backgroundChecker.guesses(
                     forWordRange: misspelled, in: word, language: language
                 )?.first
                 continuation.resume(returning: guess)
@@ -740,9 +745,14 @@ final class KeyboardContext {
         DispatchQueue.global(qos: .utility).async {
             // SwipeEngine: triggers 50K word file parse + index build (~10ms)
             _ = SwipeEngine.shared
-            // UITextChecker: first lexicon load stalls 100-200ms
-            let checker = UITextChecker()
-            _ = checker.completions(forPartialWordRange: NSRange(0..<2), in: "th", language: "en")
+            // Chinese pinyin dict: parse pinyin_dict.txt off main thread
+            ChinesePinyinIME.preloadDict()
+            // UITextChecker: first lexicon load stalls 100-200ms — use shared instance
+            Self.checkerQueue.sync {
+                _ = Self.backgroundChecker.completions(
+                    forPartialWordRange: NSRange(0..<2), in: "th", language: "en"
+                )
+            }
         }
     }
 
@@ -751,7 +761,7 @@ final class KeyboardContext {
     private func updatePredictions() {
         predictionTask?.cancel()
         predictionTask = Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(150))
+            try? await Task.sleep(for: .milliseconds(80))
             guard !Task.isCancelled else { return }
 
             guard let before = proxy?.documentContextBeforeInput else {
@@ -793,20 +803,19 @@ final class KeyboardContext {
                 merged.append(word)
             }
 
+            guard !Task.isCancelled else { return }
             lastPredictedPrefix = capturedPrefix
             if merged != predictions { predictions = merged }
         }
     }
 
-    /// Runs UITextChecker.completions on a background thread (avoids main-thread freeze
-    /// on first lexicon load and satisfies Swift 6 actor isolation).
+    /// Runs UITextChecker.completions on a background thread using the shared checker.
     nonisolated private static func completionsOnBackground(
         prefix: String, range: NSRange, language: String
     ) async -> [String] {
         await withCheckedContinuation { continuation in
-            DispatchQueue.global(qos: .userInitiated).async {
-                let checker = UITextChecker()
-                let results = checker.completions(
+            checkerQueue.async {
+                let results = backgroundChecker.completions(
                     forPartialWordRange: range, in: prefix, language: language
                 ) ?? []
                 continuation.resume(returning: Array(results.prefix(3)))

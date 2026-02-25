@@ -15,6 +15,7 @@ final class JapaneseIME: InputMethod {
     private(set) var candidates: [String] = []
 
     private var romajiBuffer: String = ""
+    private var kanjiTask: Task<Void, Never>?
 
     // MARK: - Romaji → Hiragana Table
 
@@ -240,6 +241,7 @@ final class JapaneseIME: InputMethod {
     private func updateCandidates() {
         let hiragana = displayText
         guard !hiragana.isEmpty else {
+            kanjiTask?.cancel()
             candidates = []
             return
         }
@@ -254,8 +256,10 @@ final class JapaneseIME: InputMethod {
 
         // Deferred: kanji from UITextChecker on background thread
         let capturedHiragana = hiragana
-        Task { @MainActor [weak self] in
+        kanjiTask?.cancel()
+        kanjiTask = Task { @MainActor [weak self] in
             let kanji = await Self.kanjiLookup(hiragana: capturedHiragana)
+            guard !Task.isCancelled else { return }
             guard let self, self.displayText == capturedHiragana else { return }
             var merged = kanji
             if !merged.contains(capturedHiragana) { merged.append(capturedHiragana) }
@@ -265,13 +269,16 @@ final class JapaneseIME: InputMethod {
         }
     }
 
+    /// Shared background UITextChecker — avoids creating a new instance per lookup.
+    private static let backgroundChecker = UITextChecker()
+    private static let checkerQueue = DispatchQueue(label: "jp.spellcheck", qos: .userInitiated)
+
     /// Runs UITextChecker kanji lookup off the main thread.
     nonisolated private static func kanjiLookup(hiragana: String) async -> [String] {
         await withCheckedContinuation { continuation in
-            DispatchQueue.global(qos: .userInitiated).async {
-                let checker = UITextChecker()
+            checkerQueue.async {
                 let range = NSRange(0..<hiragana.utf16.count)
-                let results = checker.completions(
+                let results = backgroundChecker.completions(
                     forPartialWordRange: range, in: hiragana, language: "ja"
                 ) ?? []
                 continuation.resume(returning: Array(results.prefix(8)))
